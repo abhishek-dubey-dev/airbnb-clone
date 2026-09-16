@@ -13,11 +13,13 @@
     </div>
 
     <div class="card show-listing-card">
-      <img
-        src="<%= foundListing.image.url || foundListing.image %>"
-        class="card-img-top show-image"
-        alt="<%= foundListing.title %>"
-      />
+      <% if (foundListing.image && foundListing.image.url) { %>
+        <img
+          src="<%= foundListing.image.url %>"
+          class="card-img-top show-image"
+          alt="<%= foundListing.title %>"
+        />
+      <% } %>
 
       <div class="card-body show-card-body">
         <h4 class="card-title mb-3"><%= foundListing.title %></h4>
@@ -116,7 +118,7 @@
         <% for (let review of foundListing.reviews) { %>
         <div class="card col-12 review-item">
           <div class="card-body">
-            <h5 class="card-title">@<%= review.author.username  %></h5>
+            <h5 class="card-title">@<%= review.author ? review.author.username : 'Deleted user' %></h5>
                       <p class="starability-result card-text" data-rating="<%= review.rating %>">
   </p>
             <p class="card-text"> <%= review.comment %></p>

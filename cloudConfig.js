@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const CloudinaryStorage = require("multer-storage-cloudinary");
@@ -32,7 +33,8 @@ const localStorage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const safeName = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
+    const extension = path.extname(file.originalname).toLowerCase();
+    const safeName = `${Date.now()}-${crypto.randomUUID()}${extension}`;
     cb(null, safeName);
   },
 });
@@ -51,4 +53,5 @@ module.exports = {
   cloudinary,
   storage,
   localStorage,
+  isCloudinaryConfigured,
 };

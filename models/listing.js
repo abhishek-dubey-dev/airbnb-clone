@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const Review = require("./review.js");
-const { required } = require("joi");
 
 const listingSchema = new Schema({
   title: { type: String, required: true },
@@ -10,7 +8,7 @@ const listingSchema = new Schema({
     url:String,
     filename:String,
   },
-  price: { type: Number, required: true },
+  price: { type: Number, required: true, min: 1 },
   location: { type: String, required: true },
   country: { type: String, required: true },
   reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],

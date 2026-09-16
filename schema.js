@@ -7,8 +7,8 @@ module.exports.listingSchema = joi.object({
   country: joi.string().required(),
   price: joi.number().required().min(1),
   image: joi.alternatives().try(
-    joi.string().uri(),
-    joi.object({ filename: joi.string().required(), url: joi.string().uri().required() }),
+    joi.string().min(1),
+    joi.object({ filename: joi.string().required(), url: joi.string().min(1).required() }),
   ).optional().allow(null),
   geometry: joi.object({
     type: joi.string().valid("Point").optional(),

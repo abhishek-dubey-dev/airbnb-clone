@@ -4,14 +4,10 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const listing = require("./models/listing.js");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const wrapAsync = require("./utils/wrapAsync");
 const ExpressError = require("./utils/ExressError");
-const { listingSchema, reviewSchema } = require("./schema.js");
-const Review = require("./models/review.js");
 const session = require("express-session");
 const MongoStoreModule = require("connect-mongo");
 const MongoStore = MongoStoreModule.MongoStore || MongoStoreModule.default || MongoStoreModule;
@@ -21,14 +17,18 @@ const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 
 const port = process.env.PORT || 8080;
-const sessionSecret = process.env.SESSION_SECRET || "development-only-change-me";
-const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/wanderlust";
+const sessionSecret = process.env.SESSION_SECRET || process.env.SECRET || "development-only-change-me";
+const dbUrl = process.env.ATLASDB_URL || process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
-if (!process.env.ATLASDB_URL) {
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET && !process.env.SECRET) {
+  throw new Error("SESSION_SECRET must be set in production");
+}
+
+if (!process.env.ATLASDB_URL && !process.env.MONGO_URL) {
   console.warn("ATLASDB_URL not found. Falling back to local MongoDB at mongodb://127.0.0.1:27017/wanderlust");
 }
 
-if (!process.env.SESSION_SECRET) {
+if (!process.env.SESSION_SECRET && !process.env.SECRET) {
   console.warn("SESSION_SECRET not found. Using a development-only default secret.");
 }
 
@@ -42,12 +42,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
 main()
   .then(() => {
-    app.listen(port, () => {
+    app.listen(port, "0.0.0.0", () => {
       console.log(`Server is running on port ${port}`);
     });
   })
@@ -57,14 +58,14 @@ main()
   });
 
 async function main() {
-  await mongoose.connect(dbUrl);
+  await mongoose.connect(dbUrl, { serverSelectionTimeoutMS: 10000 });
   console.log("Connected to MongoDB");
 }
 
 const store = MongoStore.create({
   mongoUrl: dbUrl,
   crypto: {
-    secret: process.env.SECRET ,
+    secret: sessionSecret,
   },
   touchAfter: 24 * 3600,
 });
@@ -75,7 +76,7 @@ store.on("error", (err) => {
 
 const sessionOptions = {
   store,
-  secret: process.env.SECRET,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -138,7 +139,16 @@ app.use((req, res, next) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   let { statusCode = 500, message = "Internal Server Error" } = err;
-  if (err instanceof ExpressError) {
+  if (err.name === "ValidationError") {
+    statusCode = 400;
+    message = Object.values(err.errors).map((error) => error.message).join(", ");
+  } else if (err.name === "CastError") {
+    statusCode = 400;
+    message = "Invalid resource id";
+  } else if (err.name === "MulterError" || err.message === "Only image files are allowed") {
+    statusCode = 400;
+    message = err.code === "LIMIT_FILE_SIZE" ? "Image must be 5 MB or smaller" : err.message;
+  } else if (err instanceof ExpressError) {
     statusCode = err.statusCode;
     message = err.message;
   }

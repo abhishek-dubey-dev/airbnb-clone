@@ -1,6 +1,15 @@
 const Listing = require("../models/listing");
 const { listingSchema } = require("../schema.js");
 const ExpressError = require("../utils/ExressError");
+const { isCloudinaryConfigured } = require("../cloudConfig");
+
+const getImageData = (file) => {
+  if (!file) return null;
+  return {
+    filename: file.filename,
+    url: isCloudinaryConfigured ? file.path : `/uploads/${file.filename}`,
+  };
+};
 
 module.exports.index =async (req, res) => {
   const allListings = await Listing.find({});
@@ -38,13 +47,9 @@ module.exports.createListing=async (req, res, next) => {
     if (!req.file) {
       throw new ExpressError("An image is required", 400);
     }
-    let url = req.file.path;
-    let filename = req.file.filename;
     const listingData = {
       ...req.body,
-      image: req.file
-        ? { filename: req.file.filename, url: req.file.path }
-        : req.body.image,
+      image: getImageData(req.file),
     };
     let result = listingSchema.validate(listingData, { abortEarly: false });
     if (result.error) {
@@ -55,7 +60,6 @@ module.exports.createListing=async (req, res, next) => {
     }
     const newListing = new Listing(listingData);
     newListing.owner= req.user._id;
-    newListing.image={url, filename};
     await newListing.save();
     req.flash("success", "Listing created successfully");
     res.redirect(
@@ -93,9 +97,7 @@ module.exports.updateListing=async (req, res) => {
    }
     const listingData = {
       ...req.body,
-      image: req.file
-        ? { filename: req.file.filename, url: req.file.path }
-        : existingListing.image,
+      image: req.file ? getImageData(req.file) : existingListing.image,
     };
     const result = listingSchema.validate(listingData, { abortEarly: false });
     if (result.error) {
