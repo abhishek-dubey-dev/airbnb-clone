@@ -4,12 +4,17 @@ const wrapAsync = require("../utils/wrapAsync");
 const { isLoggedIn, isOwner, validateListingMiddleware } = require("../middleware.js");
 const listingController=require("../controllers/listings.js");
 const multer = require("multer");
+const path = require("path");
 const { storage } = require("../cloudConfig");
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, callback) => {
-    if (file.mimetype.startsWith("image/")) {
+    const extension = path.extname(file.originalname).toLowerCase();
+    const allowedExtensions = new Set([".jpg", ".jpeg", ".png"]);
+    const allowedMimeTypes = new Set(["image/jpeg", "image/png"]);
+
+    if (allowedExtensions.has(extension) && allowedMimeTypes.has(file.mimetype)) {
       return callback(null, true);
     }
     callback(new Error("Only image files are allowed"));
