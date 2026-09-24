@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+const helmet = require("helmet");
 const ExpressError = require("./utils/ExressError");
 const session = require("express-session");
 const MongoStoreModule = require("connect-mongo");
@@ -17,14 +18,19 @@ const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 
 const port = process.env.PORT || 8080;
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
 const sessionSecret = process.env.SESSION_SECRET || process.env.SECRET || "development-only-change-me";
 const dbUrl = process.env.ATLASDB_URL || process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
-if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET && !process.env.SECRET) {
+if (isProduction && !process.env.SESSION_SECRET && !process.env.SECRET) {
   throw new Error("SESSION_SECRET must be set in production");
 }
 
-if (!process.env.ATLASDB_URL && !process.env.MONGO_URL) {
+if (isProduction && !process.env.ATLASDB_URL && !process.env.MONGO_URL) {
+  throw new Error("ATLASDB_URL or MONGO_URL must be set in production");
+}
+
+if (!process.env.ATLASDB_URL && !process.env.MONGO_URL && !isProduction) {
   console.warn("ATLASDB_URL not found. Falling back to local MongoDB at mongodb://127.0.0.1:27017/wanderlust");
 }
 
@@ -38,6 +44,14 @@ const userRouter = require("./routes/user.js");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.disable("x-powered-by");
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
@@ -84,7 +98,7 @@ const sessionOptions = {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction,
   },
 };
 
@@ -113,6 +127,10 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => {
   res.redirect("/listings");
+});
+
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // app.get("/demouser", async (req, res) => {
