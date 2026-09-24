@@ -43,29 +43,43 @@ module.exports.showListing= async (req, res) => {
 }
 
 
-module.exports.createListing=async (req, res, next) => {
-    if (!req.file) {
-      throw new ExpressError("An image is required", 400);
-    }
-    const listingData = {
-      ...req.body,
-      image: getImageData(req.file),
-    };
-    let result = listingSchema.validate(listingData, { abortEarly: false });
-    if (result.error) {
-      throw new ExpressError(
-        result.error.details.map((err) => err.message).join(", "),
-        400,
-      );
-    }
-    const newListing = new Listing(listingData);
-    newListing.owner= req.user._id;
-    await newListing.save();
-    req.flash("success", "Listing created successfully");
-    res.redirect(
-      `/listings/${newListing._id}?success=Listing created successfully`,
+module.exports.createListing = async (req, res, next) => {
+  if (!req.file) {
+    throw new ExpressError("An image is required", 400);
+  }
+
+  const listingData = {
+    ...req.body.listing,
+    image: getImageData(req.file),
+  };
+
+  const validationData = {
+    listing: listingData,
+  };
+
+  const result = listingSchema.validate(validationData, {
+    abortEarly: false,
+  });
+
+  if (result.error) {
+    throw new ExpressError(
+      result.error.details.map((err) => err.message).join(", "),
+      400
     );
   }
+
+  const newListing = new Listing(listingData);
+
+  newListing.owner = req.user._id;
+
+  await newListing.save();
+
+  req.flash("success", "Listing created successfully");
+
+  res.redirect(
+    `/listings/${newListing._id}?success=Listing created successfully`
+  );
+};
 
 
   module.exports.editListing=async (req, res) => {
