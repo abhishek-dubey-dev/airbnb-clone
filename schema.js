@@ -1,19 +1,21 @@
 const joi = require("joi");
 
 module.exports.listingSchema = joi.object({
-  title: joi.string().required(),
-  description: joi.string().required(),
-  location: joi.string().required(),
-  country: joi.string().required(),
-  price: joi.number().required().min(1),
-  image: joi.alternatives().try(
-    joi.string().min(1),
-    joi.object({ filename: joi.string().required(), url: joi.string().min(1).required() }),
-  ).optional().allow(null),
-  geometry: joi.object({
-    type: joi.string().valid("Point").optional(),
-    coordinates: joi.array().items(joi.number()).length(2).optional(),
-  }).optional(),
+  listing: joi.object({
+    title: joi.string().required(),
+    description: joi.string().required(),
+    location: joi.string().required(),
+    country: joi.string().required(),
+    price: joi.number().required().min(1),
+
+    geometry: joi.object({
+      type: joi.string().valid("Point").optional(),
+      coordinates: joi.array()
+        .items(joi.number())
+        .length(2)
+        .optional(),
+    }).optional(),
+  }).required(),
 });
 
 module.exports.reviewSchema = joi.object({
