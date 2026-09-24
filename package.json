@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "node --check app.js"
+    "test": "node -e \"const fs=require('fs'); const path=require('path'); const files=[]; function walk(dir){ for(const entry of fs.readdirSync(dir,{withFileTypes:true})){ const full=path.join(dir,entry.name); if(entry.isDirectory() && entry.name !== 'node_modules'){ walk(full); } else if(entry.isFile() && full.endsWith('.js')){ files.push(full); } } } walk('.'); for(const file of files){ require('child_process').execFileSync(process.execPath,['--check',file],{stdio:'inherit'}); } console.log('JavaScript syntax check passed for '+files.length+' files.');\""
   },
   "keywords": [],
   "author": "",

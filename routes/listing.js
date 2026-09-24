@@ -1,23 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync");
-const { isLoggedIn, isOwner, validateListingMiddleware } = require("../middleware.js");
+const { isLoggedIn, isOwner } = require("../middleware.js");
 const listingController=require("../controllers/listings.js");
 const multer = require("multer");
-const path = require("path");
 const { storage } = require("../cloudConfig");
+const path = require("path");
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
     const extension = path.extname(file.originalname).toLowerCase();
-    const allowedExtensions = new Set([".jpg", ".jpeg", ".png"]);
-    const allowedMimeTypes = new Set(["image/jpeg", "image/png"]);
-
-    if (allowedExtensions.has(extension) && allowedMimeTypes.has(file.mimetype)) {
+    const allowedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+    if (allowedTypes.has(file.mimetype) && allowedExtensions.has(extension)) {
       return callback(null, true);
     }
-    callback(new Error("Only image files are allowed"));
+    callback(new Error("Only JPG, PNG, or WebP image files are allowed"));
   },
 });
 

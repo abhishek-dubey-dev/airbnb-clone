@@ -6,13 +6,18 @@ module.exports.listingSchema = joi.object({
   location: joi.string().required(),
   country: joi.string().required(),
   price: joi.number().required().min(1),
-  image: joi.alternatives().try(
-    joi.string().min(1),
-    joi.object({ filename: joi.string().required(), url: joi.string().min(1).required() }),
-  ).optional().allow(null),
+
+  image: joi.object({
+    filename: joi.string().required(),
+    url: joi.string().required(),
+  }).required(),
+
   geometry: joi.object({
     type: joi.string().valid("Point").optional(),
-    coordinates: joi.array().items(joi.number()).length(2).optional(),
+    coordinates: joi.array()
+      .items(joi.number())
+      .length(2)
+      .optional(),
   }).optional(),
 });
 
