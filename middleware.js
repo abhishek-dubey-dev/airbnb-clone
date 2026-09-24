@@ -3,6 +3,10 @@ const Review = require("./models/review");
 const { listingSchema, reviewSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExressError");
 
+const listingRequestSchema = listingSchema.fork(["image"], (schema) =>
+  schema.optional(),
+);
+
 module.exports.isLoggedIn = (req, res, next) => {
   if (process.env.NODE_ENV !== "production") {
     console.log(req.path, "..", req.originalUrl);
@@ -38,9 +42,8 @@ module.exports.isOwner = async (req, res, next) => {
 };
 
 module.exports.validateListingMiddleware = (req, res, next) => {
-  let { error } = listingSchema.validate(req.body, { abortEarly: false });
+  const { error } = listingRequestSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    let errorMessages = error.details.map((err) => err.message).join(", ");
     throw new ExpressError(
       error.details.map((err) => err.message).join(", "),
       400,
@@ -51,9 +54,8 @@ module.exports.validateListingMiddleware = (req, res, next) => {
 };
 
 module.exports.validateReviewMiddleware = (req, res, next) => {
-  let { error } = reviewSchema.validate(req.body, { abortEarly: false });
+  const { error } = reviewSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    let errorMessages = error.details.map((err) => err.message).join(", ");
     throw new ExpressError(
       error.details.map((err) => err.message).join(", "),
       400,
