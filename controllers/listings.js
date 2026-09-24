@@ -5,10 +5,15 @@ const { isCloudinaryConfigured } = require("../cloudConfig");
 
 const getImageData = (file) => {
   if (!file) return null;
-  return {
-    filename: file.filename,
-    url: isCloudinaryConfigured ? file.path : `/uploads/${file.filename}`,
-  };
+  const filename = file.filename || file.public_id || file.publicId;
+  const url = file.path || file.secure_url || file.url ||
+    (!isCloudinaryConfigured && filename ? `/uploads/${filename}` : null);
+
+  if (!filename || !url) {
+    throw new ExpressError("Image upload did not return valid file details", 400);
+  }
+
+  return { filename, url };
 };
 
 module.exports.index =async (req, res) => {
