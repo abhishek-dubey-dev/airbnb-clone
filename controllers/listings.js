@@ -49,23 +49,18 @@ module.exports.createListing = async (req, res, next) => {
   }
 
   const listingData = {
-    ...req.body.listing,
+    ...req.body,
     image: getImageData(req.file),
   };
 
-  const validationData = {
-    listing: listingData,
-  };
-
-  const result = listingSchema.validate(validationData, {
+  const result = listingSchema.validate(listingData, {
     abortEarly: false,
   });
 
   if (result.error) {
     throw new ExpressError(
-      result.error.details.map((err) => err.message).join(", "),
-      400
-    );
+      result.error.details.map((err) => err.message).join(", ")
+    , 400);
   }
 
   const newListing = new Listing(listingData);
