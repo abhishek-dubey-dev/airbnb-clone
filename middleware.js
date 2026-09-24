@@ -16,8 +16,9 @@ module.exports.isLoggedIn = (req, res, next) => {
 };
 
 module.exports.saveRedirectUrl = (req, res, next) => {
-  if (req.session.redirectUrl) {
-    res.locals.redirectUrl = req.session.redirectUrl;
+  const redirectUrl = req.session.redirectUrl;
+  if (typeof redirectUrl === "string" && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")) {
+    res.locals.redirectUrl = redirectUrl;
   }
   next();
 };
